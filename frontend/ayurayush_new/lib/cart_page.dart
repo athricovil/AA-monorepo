@@ -870,13 +870,13 @@ class _CartPageState extends State<CartPage> {
                 Container(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: cartProvider.totalPrice > 0 ? () => _openCheckout(cartProvider.totalPrice) : null,
+                    onPressed: cartProvider.totalPrice > 0 ? () => Navigator.pushNamed(context, '/checkout') : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF4A2C2A),
                       padding: EdgeInsets.symmetric(vertical: 12),
                       minimumSize: Size(double.infinity, 50),
                     ),
-                    child: Text('Proceed to Buy', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    child: Text('Proceed to Checkout', style: TextStyle(fontSize: 18, color: Colors.white)),
                   ),
                 ),
               ],

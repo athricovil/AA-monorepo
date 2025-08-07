@@ -8,8 +8,9 @@ set -e
 
 # --- Configurable Variables ---
 PROJECT_DIR="/root"
-SPRING_BACKEND_REPO="https://github.com/athricovil/AAbackend.git"
-FLUTTER_FRONTEND_REPO="https://github.com/athricovil/AA.git"
+# Using local directories instead of external repos since code is in monorepo
+BACKEND_DIR="$PROJECT_DIR/backend"
+FRONTEND_DIR="$PROJECT_DIR/frontend/ayurayush_new"
 DB_NAME="ayurdb"
 DB_USER="ayuruser"
 DB_PASS="ayurpass"
@@ -25,12 +26,9 @@ sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'"
 sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname = '$DB_USER'" | grep -q 1 || sudo -u postgres psql -c "CREATE USER $DB_USER WITH ENCRYPTED PASSWORD '$DB_PASS';"
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
 
-# --- Clone and Build Backend ---
-echo "[3/9] Cloning backend repo..."
-cd $PROJECT_DIR
-[ -d "AAbackend" ] && rm -rf AAbackend
-git clone $SPRING_BACKEND_REPO AAbackend
-cd AAbackend/server
+# --- Build Backend from Local Directory ---
+echo "[3/9] Building backend from local directory..."
+cd $BACKEND_DIR/server
 
 # Inject DB config into Spring Boot
 cat <<EOL > src/main/resources/application.properties
@@ -52,8 +50,8 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=$PROJECT_DIR/AAbackend/server
-ExecStart=/usr/bin/java -jar $PROJECT_DIR/AAbackend/server/target/server-0.0.1-SNAPSHOT.jar
+WorkingDirectory=$BACKEND_DIR/server
+ExecStart=/usr/bin/java -jar $BACKEND_DIR/server/target/server-0.0.1-SNAPSHOT.jar
 SuccessExitStatus=143
 Restart=always
 RestartSec=10
@@ -76,12 +74,9 @@ echo 'export PATH="$PROJECT_DIR/flutter/bin:\$PATH"' >> ~/.bashrc
 
 flutter doctor
 
-# --- Build Flutter Web App ---
-echo "[6/9] Cloning and building Flutter frontend..."
-cd $PROJECT_DIR
-[ -d "AAfrontend" ] && rm -rf AAfrontend
-git clone $FLUTTER_FRONTEND_REPO AAfrontend
-cd AAfrontend/ayurayush_new
+# --- Build Flutter Web App from Local Directory ---
+echo "[6/9] Building Flutter frontend from local directory..."
+cd $FRONTEND_DIR
 flutter pub get
 flutter build web
 
