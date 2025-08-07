@@ -8,8 +8,9 @@ set -e
 
 # --- Configurable Variables ---
 PROJECT_DIR="/root"
-SPRING_BACKEND_REPO="https://github.com/athricovil/AAbackend.git"
-FLUTTER_FRONTEND_REPO="https://github.com/athricovil/AA.git"
+# Using local directories instead of external repos since code is in monorepo
+BACKEND_DIR="$PROJECT_DIR/backend"
+FRONTEND_DIR="$PROJECT_DIR/frontend/ayurayush_new"
 DB_NAME="ayurdb"
 DB_USER="ayuruser"
 DB_PASS="ayurpass"
@@ -237,12 +238,9 @@ MY_IP=$(curl -s ifconfig.me)
 echo "host    all             all             $MY_IP/32               md5" | sudo tee -a "$PG_HBA"
 sudo systemctl restart postgresql
 
-# --- [4/10] Clone and Build Backend ---
-echo "[4/10] Cloning and building Spring Boot backend..."
-cd $PROJECT_DIR
-[ -d "AAbackend" ] && rm -rf AAbackend
-git clone $SPRING_BACKEND_REPO AAbackend
-cd AAbackend/server
+# --- [4/10] Build Backend from Local Directory ---
+echo "[4/10] Building Spring Boot backend from local directory..."
+cd $BACKEND_DIR/server
 
 # Inject DB config and placeholder JWT properties
 echo "[5/10] Writing application.properties..."
@@ -268,12 +266,12 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=$PROJECT_DIR/AAbackend/server
+WorkingDirectory=$BACKEND_DIR/server
 ExecStart=/usr/bin/java \\
   -Djwt.secret=$JWT_SECRET \\
   -Djwt.expirationMs=$JWT_EXPIRATION_MS \\
   -Dcors.allowed-origin-patterns=$CORS_ALLOWED_ORIGIN_PATTERNS \\
-  -jar $PROJECT_DIR/AAbackend/server/target/server-0.0.1-SNAPSHOT.jar
+  -jar $BACKEND_DIR/server/target/server-0.0.1-SNAPSHOT.jar
 SuccessExitStatus=143
 Restart=always
 RestartSec=10
@@ -295,12 +293,9 @@ export PATH="$PROJECT_DIR/flutter/bin:$PATH"
 echo 'export PATH="/root/flutter/bin:$PATH"' >> ~/.bashrc
 flutter doctor
 
-# --- [8/10] Build Flutter Frontend ---
-echo "[8/10] Building Flutter web frontend..."
-cd $PROJECT_DIR
-[ -d "AAfrontend" ] && rm -rf AAfrontend
-git clone $FLUTTER_FRONTEND_REPO AAfrontend
-cd AAfrontend/ayurayush_new
+# --- [8/10] Build Flutter Frontend from Local Directory ---
+echo "[8/10] Building Flutter web frontend from local directory..."
+cd $FRONTEND_DIR
 flutter pub get
 flutter build web
 
