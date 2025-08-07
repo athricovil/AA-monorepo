@@ -8,9 +8,8 @@ set -e
 
 # --- Configurable Variables ---
 PROJECT_DIR="/root"
-# Using local directories instead of external repos since code is in monorepo
-BACKEND_DIR="$PROJECT_DIR/backend"
-FRONTEND_DIR="$PROJECT_DIR/frontend/ayurayush_new"
+AA_MONOREPO_REPO="https://github.com/athricovil/AA-monorepo.git"
+# Note: This script clones the AA-monorepo which contains both backend and frontend code
 DB_NAME="ayurdb"
 DB_USER="ayuruser"
 DB_PASS="ayurpass"
@@ -238,9 +237,12 @@ MY_IP=$(curl -s ifconfig.me)
 echo "host    all             all             $MY_IP/32               md5" | sudo tee -a "$PG_HBA"
 sudo systemctl restart postgresql
 
-# --- [4/10] Build Backend from Local Directory ---
-echo "[4/10] Building Spring Boot backend from local directory..."
-cd $BACKEND_DIR/server
+# --- [4/10] Clone AA-monorepo and Build Backend ---
+echo "[4/10] Cloning AA-monorepo and building Spring Boot backend..."
+cd $PROJECT_DIR
+# Clone the AA-monorepo to get backend and frontend code
+git clone https://github.com/athricovil/AA-monorepo.git
+cd AA-monorepo/backend/server
 
 # Inject DB config and placeholder JWT properties
 echo "[5/10] Writing application.properties..."
@@ -266,12 +268,12 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=$BACKEND_DIR/server
+WorkingDirectory=$PROJECT_DIR/AA-monorepo/backend/server
 ExecStart=/usr/bin/java \\
   -Djwt.secret=$JWT_SECRET \\
   -Djwt.expirationMs=$JWT_EXPIRATION_MS \\
   -Dcors.allowed-origin-patterns=$CORS_ALLOWED_ORIGIN_PATTERNS \\
-  -jar $BACKEND_DIR/server/target/server-0.0.1-SNAPSHOT.jar
+  -jar $PROJECT_DIR/AA-monorepo/backend/server/target/server-0.0.1-SNAPSHOT.jar
 SuccessExitStatus=143
 Restart=always
 RestartSec=10
@@ -293,9 +295,9 @@ export PATH="$PROJECT_DIR/flutter/bin:$PATH"
 echo 'export PATH="/root/flutter/bin:$PATH"' >> ~/.bashrc
 flutter doctor
 
-# --- [8/10] Build Flutter Frontend from Local Directory ---
-echo "[8/10] Building Flutter web frontend from local directory..."
-cd $FRONTEND_DIR
+# --- [8/10] Build Flutter Frontend from Monorepo ---
+echo "[8/10] Building Flutter web frontend from monorepo..."
+cd $PROJECT_DIR/AA-monorepo/frontend/ayurayush_new
 flutter pub get
 flutter build web
 
